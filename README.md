@@ -34,7 +34,7 @@ async function init() {
   
   // server start
   const server = new AMQPRPCServer(connection);
-  server.addCommand('hello', (name) => ({message: `Hello, ${name}!`}));  
+  server.addCommand('hello', (name, cb) => ({message: `Hello, ${cb ? cb(name) : name}!`}));  
   await server.start();
   
   // name of temporary queue, has to be passed somehow to client by external service
@@ -43,7 +43,7 @@ async function init() {
   // client start
   const client = new AMQPRPCClient(connection, {requestsQueue});
   await client.start();
-  const response = await client.sendCommand('hello', ['Alisa']);
+  const response = await client.sendCommand('hello', ['Alisa', (str) => str.toUpperCase()]);
   console.log('Alisa got response:', response);
   
   return {server, client};
@@ -90,7 +90,7 @@ Full working example you could find [here](examples/amqp-rpc-with-permanent-queu
 To register a new RPC command in the server, use `addCommand()` method:
 
 ```javascript
-server.addCommand('hello', (name, cb) => ({message: `Hello, ${name}!`}));
+server.addCommand('hello', (name) => ({message: `Hello, ${name}!`}));
 ```
 
 Handler could also return a promise or async function, e.g.:
