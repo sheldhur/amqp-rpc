@@ -15,14 +15,17 @@ class AMQPRPCServer extends AMQPEndpoint {
    *
    * @param {Object} params
    * @param {String} params.requestsQueue queue when AMQPRPC client sends commands, should correspond with AMQPRPCClient
+   * @param {Boolean} params.allowCallback callbacks sends from AMQPRPCClient can be executable
    *    default is '' which means auto-generated queue name
    */
   constructor(connection, params = {}) {
     params.requestsQueue = params.requestsQueue || '';
+    params.allowCallback = params.allowCallback || false;
 
     super(connection, params);
 
     this._requestsQueue = params.requestsQueue;
+    this._allowCallback = params.allowCallback;
     this._commands = {};
   }
 
@@ -103,7 +106,7 @@ class AMQPRPCServer extends AMQPEndpoint {
    * @param {Object} msg
    */
   _dispatchCommand(msg) {
-    const command = Command.fromBuffer(msg.content);
+    const command = Command.fromBuffer(msg.content, this._allowCallback);
 
     if (this._commands[command.command] && this._commands[command.command] instanceof Function) {
       return this._commands[command.command].apply(null, command.args);

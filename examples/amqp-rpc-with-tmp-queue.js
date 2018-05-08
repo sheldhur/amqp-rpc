@@ -20,7 +20,7 @@ async function initServer() {
   const connection = await amqplib.connect('amqp://localhost');
   const server = new AMQPRPCServer(connection);
 
-  server.addCommand('hello', (name) => ({message: `Hello, ${name}!`}));
+  server.addCommand('hello', (name, cb) => ({message: `Hello, ${cb ? cb(name) : name}!`}));
 
   server.addCommand('get-time', () => ({time: new Date()}));
 
@@ -40,7 +40,7 @@ async function initClient1(requestsQueue) {
   const client = new AMQPRPCClient(connection, {requestsQueue});
   await client.start();
 
-  const response1 = await client.sendCommand('hello', ['Tom']);
+  const response1 = await client.sendCommand('hello', ['Tom', (str) => str.toUpperCase()]);
   console.log(`Tom got hello response ${response1.message}`);
 
   await delay(100);

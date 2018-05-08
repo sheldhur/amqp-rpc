@@ -32,7 +32,48 @@ class Command {
     return new Buffer(JSON.stringify({
       command: this.command,
       args: this.args
-    }));
+    }, this.constructor.replacer));
+  }
+
+  /**
+   * Static helper for serialize function to string.
+   *
+   * @static
+   * @param key
+   * @param value
+   * @returns {string}
+   */
+  static replacer(key, value) {
+    if (typeof(value) === 'function') {
+      return value.toString();
+    }
+    return value;
+  }
+
+
+  /**
+   * Static helper for de-serialize function from string.
+   *
+   * @static
+   * @param key
+   * @param value
+   * @returns {Object}
+   */
+  static revive(key, value) {
+    if (key === '') return value;
+
+    if (typeof value === 'string') {
+      const match = value.match(/(?:function[^(]*)?\(?([^)=]+)\)?(?:\s*(?:=>)?\s*){([\s\S]+)}/);
+
+      if (match) {
+        return new Function(
+          match[1].replace(/,+$/, '').split(',').map(arg => arg.replace(/\s+/, '')),
+          match[2],
+        );
+      }
+    }
+
+    return value;
   }
 
   /**
@@ -51,11 +92,12 @@ class Command {
    *
    * @static
    * @param {Buffer} buffer
+   * @param {Boolean} reviveFunctions
    * @returns {Command}
    */
-  static fromBuffer(buffer) {
+  static fromBuffer(buffer, reviveFunctions = false) {
     const str = buffer.toString('utf-8');
-    const obj = JSON.parse(str);
+    const obj = JSON.parse(str, reviveFunctions? this.revive : null);
 
     assert(obj.command, 'Expect command field to be present and not false in serialized command');
     assert(typeof obj.command === 'string', 'Expect command field to be string');

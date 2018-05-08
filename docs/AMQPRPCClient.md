@@ -30,7 +30,8 @@ Send a command into RPC queue.
 ```js
 client.sendCommand('some-command-name', [
  {foo: 'bar'},
- [1, 2, 3]
+ [1, 2, 3],
+ function callback (test) { console.log(test) }
 ]);
 ```
 
